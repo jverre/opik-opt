@@ -38,6 +38,8 @@ import {
 import {
   DEFAULT_GEMINI_EMBEDDING_MODEL,
   DEFAULT_GEMINI_FLASH_MODEL,
+  DEFAULT_GEMINI_MODEL,
+  DEFAULT_ANTHROPIC_MODEL,
 } from './models.js';
 import { ClearcutLogger } from '../telemetry/clearcut-logger/clearcut-logger.js';
 
@@ -231,10 +233,16 @@ export class Config {
     const _isAuthMethodSwitch =
       previousAuthType && previousAuthType !== authMethod;
 
-    // Always use the original default model when switching auth methods
-    // This ensures users don't stay on Flash after switching between auth types
-    // and allows API key users to get proper fallback behavior from getEffectiveModel
-    const modelToUse = this.model; // Use the original default model
+    // Use auth-type-specific default model when switching auth methods
+    // This ensures users get the appropriate model for their selected auth type
+    const getDefaultModelForAuthType = (authType: AuthType): string => {
+      if (authType === AuthType.USE_ANTHROPIC) {
+        return DEFAULT_ANTHROPIC_MODEL;
+      }
+      return DEFAULT_GEMINI_MODEL;
+    };
+    
+    const modelToUse = getDefaultModelForAuthType(authMethod);
 
     // Temporarily clear contentGeneratorConfig to prevent getModel() from returning
     // the previous session's model (which might be Flash)
@@ -243,7 +251,7 @@ export class Config {
     const contentConfig = await createContentGeneratorConfig(
       modelToUse,
       authMethod,
-      this,
+      undefined, // Don't pass 'this' to avoid getModel() fallback to original CLI model
     );
 
     const gc = new GeminiClient(this);

@@ -296,7 +296,9 @@ export class GeminiClient {
         throw error;
       }
       try {
-        return JSON.parse(text);
+        // Strip markdown code blocks if present
+        const cleanText = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+        return JSON.parse(cleanText);
       } catch (parseError) {
         await reportError(
           parseError,

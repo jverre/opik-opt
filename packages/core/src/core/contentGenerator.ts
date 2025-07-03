@@ -14,7 +14,8 @@ import {
   GoogleGenAI,
 } from '@google/genai';
 import { createCodeAssistContentGenerator } from '../code_assist/codeAssist.js';
-import { DEFAULT_GEMINI_MODEL } from '../config/models.js';
+import { createAISDKContentGenerator } from '../ai-sdk/aiSdk.js';
+import { DEFAULT_GEMINI_MODEL, DEFAULT_ANTHROPIC_MODEL } from '../config/models.js';
 import { getEffectiveModel } from './modelCheck.js';
 
 /**
@@ -38,6 +39,7 @@ export enum AuthType {
   LOGIN_WITH_GOOGLE_PERSONAL = 'oauth-personal',
   USE_GEMINI = 'gemini-api-key',
   USE_VERTEX_AI = 'vertex-ai',
+  USE_ANTHROPIC = 'anthropic',
 }
 
 export type ContentGeneratorConfig = {
@@ -56,9 +58,17 @@ export async function createContentGeneratorConfig(
   const googleApiKey = process.env.GOOGLE_API_KEY;
   const googleCloudProject = process.env.GOOGLE_CLOUD_PROJECT;
   const googleCloudLocation = process.env.GOOGLE_CLOUD_LOCATION;
+  const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
 
-  // Use runtime model from config if available, otherwise fallback to parameter or default
-  const effectiveModel = config?.getModel?.() || model || DEFAULT_GEMINI_MODEL;
+  // Use runtime model from config if available, otherwise fallback to parameter or auth-specific default
+  const getDefaultModel = () => {
+    if (authType === AuthType.USE_ANTHROPIC) {
+      return DEFAULT_ANTHROPIC_MODEL;
+    }
+    return DEFAULT_GEMINI_MODEL;
+  };
+  
+  const effectiveModel = config?.getModel?.() || model || getDefaultModel();
 
   const contentGeneratorConfig: ContentGeneratorConfig = {
     model: effectiveModel,
@@ -97,6 +107,12 @@ export async function createContentGeneratorConfig(
     return contentGeneratorConfig;
   }
 
+  if (authType === AuthType.USE_ANTHROPIC && anthropicApiKey) {
+    contentGeneratorConfig.apiKey = anthropicApiKey;
+    // For AI SDK, we'll use the model name as-is (e.g., 'claude-3-sonnet-20240229')
+    return contentGeneratorConfig;
+  }
+
   return contentGeneratorConfig;
 }
 
@@ -124,6 +140,14 @@ export async function createContentGenerator(
     });
 
     return googleGenAI.models;
+  }
+
+  if (config.authType === AuthType.USE_ANTHROPIC) {
+    // Import anthropic provider dynamically to avoid dependency if not used
+    const { anthropic } = await import('@ai-sdk/anthropic');
+    const model = anthropic(config.model);
+    
+    return createAISDKContentGenerator(model, config.model);
   }
 
   throw new Error(

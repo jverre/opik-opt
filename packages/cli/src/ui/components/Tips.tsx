@@ -19,26 +19,17 @@ export const Tips: React.FC<TipsProps> = ({ config }) => {
     <Box flexDirection="column" marginBottom={1}>
       <Text color={Colors.Foreground}>Tips for getting started:</Text>
       <Text color={Colors.Foreground}>
-        1. Ask questions, edit files, or run commands.
+        1. Ask about prompt engineering best practices
       </Text>
       <Text color={Colors.Foreground}>
-        2. Be specific for the best results.
+        2. Ask Opik to optimize your prompts
       </Text>
-      {geminiMdFileCount === 0 && (
-        <Text color={Colors.Foreground}>
-          3. Create{' '}
-          <Text bold color={Colors.AccentPurple}>
-            GEMINI.md
-          </Text>{' '}
-          files to customize your interactions with Gemini.
-        </Text>
-      )}
       <Text color={Colors.Foreground}>
-        {geminiMdFileCount === 0 ? '4.' : '3.'}{' '}
+        3.{' '}
         <Text bold color={Colors.AccentPurple}>
           /help
         </Text>{' '}
-        for more information.
+        for more information
       </Text>
     </Box>
   );

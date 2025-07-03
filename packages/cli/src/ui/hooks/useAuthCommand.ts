@@ -11,6 +11,8 @@ import {
   Config,
   clearCachedCredentialFile,
   getErrorMessage,
+  DEFAULT_GEMINI_MODEL,
+  DEFAULT_ANTHROPIC_MODEL,
 } from '@google/gemini-cli-core';
 
 async function performAuthFlow(authMethod: AuthType, config: Config) {
@@ -18,10 +20,18 @@ async function performAuthFlow(authMethod: AuthType, config: Config) {
   console.log(`Authenticated via "${authMethod}".`);
 }
 
+function getDefaultModelForAuthType(authType: string): string {
+  if (authType === AuthType.USE_ANTHROPIC) {
+    return DEFAULT_ANTHROPIC_MODEL;
+  }
+  return DEFAULT_GEMINI_MODEL;
+}
+
 export const useAuthCommand = (
   settings: LoadedSettings,
   setAuthError: (error: string | null) => void,
   config: Config,
+  onModelChange?: (model: string) => void,
 ) => {
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(
     settings.merged.selectedAuthType === undefined,
@@ -39,6 +49,13 @@ export const useAuthCommand = (
         return;
       }
 
+      // Auto-select appropriate model for the saved auth type on startup
+      const defaultModel = getDefaultModelForAuthType(settings.merged.selectedAuthType);
+      config.setModel(defaultModel);
+      if (onModelChange) {
+        onModelChange(defaultModel);
+      }
+
       try {
         setIsAuthenticating(true);
         await performAuthFlow(
@@ -54,18 +71,27 @@ export const useAuthCommand = (
     };
 
     void authFlow();
-  }, [isAuthDialogOpen, settings, config, setAuthError, openAuthDialog]);
+  }, [isAuthDialogOpen, settings, config, setAuthError, openAuthDialog, onModelChange]);
 
   const handleAuthSelect = useCallback(
     async (authMethod: string | undefined, scope: SettingScope) => {
       if (authMethod) {
         await clearCachedCredentialFile();
         settings.setValue(scope, 'selectedAuthType', authMethod);
+        
+        // Auto-select appropriate default model for the auth type
+        const defaultModel = getDefaultModelForAuthType(authMethod);
+        config.setModel(defaultModel);
+        
+        // Notify parent component to update UI state immediately
+        if (onModelChange) {
+          onModelChange(defaultModel);
+        }
       }
       setIsAuthDialogOpen(false);
       setAuthError(null);
     },
-    [settings, setAuthError],
+    [settings, setAuthError, config, onModelChange],
   );
 
   const handleAuthHighlight = useCallback((_authMethod: string | undefined) => {

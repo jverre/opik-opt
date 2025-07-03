@@ -148,7 +148,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     handleAuthHighlight,
     isAuthenticating,
     cancelAuthentication,
-  } = useAuthCommand(settings, setAuthError, config);
+  } = useAuthCommand(settings, setAuthError, config, setCurrentModel);
 
   useEffect(() => {
     if (settings.merged.selectedAuthType) {
@@ -224,12 +224,11 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
       }
     };
 
-    // Check immediately and then periodically
-    checkModelChange();
+    // Only check periodically for external model changes
     const interval = setInterval(checkModelChange, 1000); // Check every second
 
     return () => clearInterval(interval);
-  }, [config, currentModel]);
+  }, [config]); // Remove currentModel from dependencies to prevent immediate retrigger
 
   // Set up Flash fallback handler
   useEffect(() => {
