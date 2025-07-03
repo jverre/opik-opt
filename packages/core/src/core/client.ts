@@ -115,7 +115,7 @@ export class GeminiClient {
       fileService: this.config.getFileService(),
     });
     const context = `
-  This is the Gemini CLI. We are setting up the context for our chat.
+  This is the Optimizer CLI. We are setting up the context for our chat.
   Today's date is ${today}.
   My operating system is: ${platform}
   I'm currently working in the directory: ${cwd}
@@ -232,6 +232,7 @@ export class GeminiClient {
     for await (const event of resultStream) {
       yield event;
     }
+    
     if (!turn.pendingToolCalls.length && signal && !signal.aborted) {
       const nextSpeakerCheck = await checkNextSpeaker(
         this.getChat(),

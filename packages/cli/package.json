@@ -1,12 +1,12 @@
 {
-  "name": "@google/gemini-cli",
+  "name": "@opik/opik-optimizer",
   "version": "0.1.5",
-  "description": "Gemini CLI",
-  "repository": "google-gemini/gemini-cli",
+  "description": "Opik Optimizer CLI",
+  "repository": "opik/opik-optimizer",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "gemini": "dist/index.js"
+    "opik-optimizer": "dist/index.js"
   },
   "scripts": {
     "build": "node ../../scripts/build_package.js",

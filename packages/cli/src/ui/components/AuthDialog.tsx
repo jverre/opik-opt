@@ -93,7 +93,7 @@ export function AuthDialog({
       <Box marginTop={1}>
         <Text color={Colors.Gray}>(Use Enter to select)</Text>
       </Box>
-      <Box marginTop={1}>
+      {/* <Box marginTop={1}>
         <Text>Terms of Services and Privacy Notice for Gemini CLI</Text>
       </Box>
       <Box marginTop={1}>
@@ -102,7 +102,7 @@ export function AuthDialog({
             'https://github.com/google-gemini/gemini-cli/blob/main/docs/tos-privacy.md'
           }
         </Text>
-      </Box>
+      </Box> */}
     </Box>
   );
 }

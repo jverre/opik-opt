@@ -64,7 +64,7 @@ vi.mock('../telemetry/index.js', () => ({
   logApiError: vi.fn(),
 }));
 
-describe('Gemini Client (client.ts)', () => {
+describe('Optimizer Client (client.ts)', () => {
   let client: GeminiClient;
   beforeEach(async () => {
     vi.resetAllMocks();

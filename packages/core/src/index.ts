@@ -23,6 +23,9 @@ export * from './core/nonInteractiveToolExecutor.js';
 export * from './code_assist/codeAssist.js';
 export * from './code_assist/oauth2.js';
 
+export * from './ai-sdk/aiSdk.js';
+export * from './ai-sdk/client.js';
+
 // Export utilities
 export * from './utils/paths.js';
 export * from './utils/schemaValidator.js';
