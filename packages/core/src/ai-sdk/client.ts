@@ -8,11 +8,15 @@ import {
   generateText,
   streamText,
   jsonSchema,
+  smoothStream,
   type LanguageModel,
   type CoreMessage,
   type FinishReason,
   type Tool,
   type ToolChoice,
+  type TextPart,
+  type ToolCallPart,
+  type ToolResultPart,
 } from 'ai';
 import {
   GenerateContentParameters,
@@ -99,6 +103,7 @@ export class AISDKModelsClient implements ContentGenerator {
       maxTokens: config.maxOutputTokens,
       topP: config.topP,
       system: this.extractSystemMessage(normalizedContents),
+      experimental_transform: smoothStream(),
     };
 
     // Only add tools and toolChoice if we have tools
@@ -225,7 +230,7 @@ export class AISDKModelsClient implements ContentGenerator {
       } else if (chunk.type === 'tool-result') {
         // AI SDK shouldn't generate tool-result chunks without execute functions
         // If it does, we'll ignore them since the existing system handles execution
-        console.log('Unexpected tool-result chunk from AI SDK:', chunk);
+        // This is expected behavior - no action needed
         
       } else if (chunk.type === 'error') {
         throw new Error(`Stream error chunk:
@@ -237,8 +242,7 @@ export class AISDKModelsClient implements ContentGenerator {
         // Skip step-start chunks - they're just metadata
         continue;
       } else {
-        // Log unknown chunk types but don't crash
-        console.log(`Unknown chunk type: ${chunk.type}`, chunk);
+        // Skip unknown chunk types - they're likely new AI SDK features
         continue;
       }
       
@@ -317,6 +321,7 @@ export class AISDKModelsClient implements ContentGenerator {
     yield finalResponse;
   }
 
+
   private normalizeContents(contents: ContentListUnion): Content[] {
     if (Array.isArray(contents)) {
       // it's a Content[] or a PartsUnion[]
@@ -379,28 +384,33 @@ export class AISDKModelsClient implements ContentGenerator {
       const toolResults = content.parts
         ?.filter(part => part.functionResponse) || [];
       
-      // Add assistant/user messages with text content
-      if (text) {
+      // Add regular message for text content
+      if (text && content.role === 'user') {
+        // User messages only contain text
+        messages.push({
+          role: 'user' as const,
+          content: text,
+        });
+      } else if (text && content.role === 'model') {
+        // Assistant messages with text and optionally tool calls
         const contentParts: any[] = [{ type: 'text', text }];
         
-        // Add tool calls as ToolCallPart if this is a model message with function calls
-        if (content.role === 'model' && toolCalls.length > 0) {
-          for (const toolCall of toolCalls) {
-            contentParts.push({
-              type: 'tool-call',
-              toolCallId: toolCall.toolCallId,
-              toolName: toolCall.toolName,
-              args: toolCall.args,
-            });
-          }
+        // Add tool calls as ToolCallPart
+        for (const toolCall of toolCalls) {
+          contentParts.push({
+            type: 'tool-call',
+            toolCallId: toolCall.toolCallId,
+            toolName: toolCall.toolName,
+            args: toolCall.args,
+          });
         }
         
         messages.push({
-          role: content.role === 'user' ? 'user' : 'assistant',
+          role: 'assistant' as const,
           content: contentParts,
         });
       } else if (content.role === 'model' && toolCalls.length > 0) {
-        // For model messages with only tool calls (no text)
+        // Assistant messages with only tool calls (no text)
         const contentParts: any[] = [
           { type: 'text', text: `I'll help you with that. Let me use the appropriate tools.` }
         ];
